@@ -13,6 +13,27 @@ def binary_to_decimal(binary_list):
     return decimal
 
 
+def twos_complement_to_decimal(bits):
+    BIT_LENGTH = 8
+    ORIGIN_BIT_LENGTH = 7
+    if len(bits) != BIT_LENGTH:
+        raise ValueError("Массив должен содержать ровно 8 элементов")
+
+    if bits[0] == 1:
+        inverted_bits = [1 - bit for bit in bits]
+        carry = 1
+        for i in range(ORIGIN_BIT_LENGTH, -1, -1):
+            if inverted_bits[i] == 1 and carry == 1:
+                inverted_bits[i] = 0
+            elif inverted_bits[i] == 0 and carry == 1:
+                inverted_bits[i] = 1
+                carry = 0
+        value = -sum(inverted_bits[i] * (2 ** (ORIGIN_BIT_LENGTH - i)) for i in range(BIT_LENGTH))
+    else:
+        value = sum(bits[i] * (2 ** (ORIGIN_BIT_LENGTH - i)) for i in range(BIT_LENGTH))
+
+    return value
+
 def binary_to_decimal_str(binary_str):
     integer_part, fractional_part = binary_str.split('.')
 
@@ -25,8 +46,8 @@ def binary_to_decimal_str(binary_str):
 def addition_bin(first, second):
     result = []
     next = 0
-    max_length = 8
-    for i in range(max_length - 1, -1, -1):
+    MAX_LENGTH = 8
+    for i in range(MAX_LENGTH - 1, -1, -1):
         count = first[i] + second[i] + next
         next = 0 if count < 2 else 1
         result.append(count % 2)
@@ -65,6 +86,7 @@ def to_bin(num, choise):
         return additionally
 
 def to_bin_for_subtraction(num):
+    BIN_SIZE = 8
     direct = []
     if(num >= 0):
         direct.append(0)
@@ -74,8 +96,8 @@ def to_bin_for_subtraction(num):
         direct.insert(-1, num % 2)
         num = math.trunc(num / 2)
     direct.reverse()
-    if len(direct) < 8:
-            direct = direct[:1] + [0] * (8 - len(direct)) + direct[1:]
+    if len(direct) < BIN_SIZE:
+            direct = direct[:1] + [0] * (BIN_SIZE - len(direct)) + direct[1:]
     inverse = []
     additionally = []
     if(direct[0] == 0):
@@ -116,6 +138,7 @@ def subtract_binary(a, b):
     return a if a else [0]
 
 def division_bin(dividend, divisor):
+    FIVE_RANGE = 5
     if all(bit == 0 for bit in divisor):
         return "Ошибка: Деление на ноль"
 
@@ -141,7 +164,7 @@ def division_bin(dividend, divisor):
     quotient.append('.')
     fractional_part = []
 
-    for _ in range(5):
+    for _ in range(FIVE_RANGE):
         remainder.append(0)
         if compare_binary(remainder, abs_divisor):
             fractional_part.append(1)
@@ -152,16 +175,21 @@ def division_bin(dividend, divisor):
     result = sign + ''.join(map(str, quotient)) + ''.join(map(str, fractional_part))
     return result
 def multiplication_bin(first_num, second_num):
+    TRUE_BIT_SIZE = 7
     sign = 0 if first_num[0] == second_num[0] else 1
     result = [0,0,0,0,0,0,0,0]
-    for i in range(7, 0, -1):
+    for i in range(TRUE_BIT_SIZE, 0, -1):
         if(second_num[i] == 0):
             continue
         first = [0] + first_num[1:]
-        first = first[(7 - i):] + [0] * (7 - i)
+        first = first[(TRUE_BIT_SIZE - i):] + [0] * (TRUE_BIT_SIZE - i)
         result = addition_bin(result, first)
     return [sign] + result[1:]
 def float_to_ieee754(num):
+    SQUARE_ROOT = 2
+    TRUE_BIT_SIZE = 7
+    MANTIS_BIT_LENGTH = 23
+    MAX_BIT_SIZE = 127
     result = [0]
 
     integer_part = int(num)
@@ -171,49 +199,55 @@ def float_to_ieee754(num):
     if integer_part == 0:
         binary = ['0']
     while integer_part > 0:
-        binary.insert(0, str(integer_part % 2))
-        integer_part //= 2
+        binary.insert(0, str(integer_part % SQUARE_ROOT))
+        integer_part //= SQUARE_ROOT
 
     binary.append('.')
-    for _ in range(23):
-        fractional_part *= 2
+    for _ in range(MANTIS_BIT_LENGTH):
+        fractional_part *= SQUARE_ROOT
         bit = int(fractional_part)
         binary.append(str(bit))
         fractional_part -= bit
 
     point_pos = binary.index('.')
     first_one_pos = ''.join(binary).replace('.', '').index('1')
-    exponent = point_pos - first_one_pos - 1 + 127
+    exponent = point_pos - first_one_pos - 1 + MAX_BIT_SIZE
 
-    for i in range(7, -1, -1):
+    for i in range(TRUE_BIT_SIZE, -1, -1):
         result.append(1 if exponent & (1 << i) else 0)
 
     binary_str = ''.join(binary).replace('.', '')
     mantissa_start = first_one_pos + 1
-    mantissa = binary_str[mantissa_start:mantissa_start + 23]
-    mantissa = mantissa.ljust(23, '0')
+    mantissa = binary_str[mantissa_start:mantissa_start + MANTIS_BIT_LENGTH]
+    mantissa = mantissa.ljust(MANTIS_BIT_LENGTH, '0')
     result.extend([int(x) for x in mantissa])
 
     return result
 
 
 def ieee754_to_float(ieee):
+    MAX_BIT_SIZE = 127
+    EXPONENT_SIZE = 9
+    BIT_LENGTH = 32
+    TWO = 2
     exponent = 0
-    for i in range(1, 9):
-        exponent = exponent * 2 + ieee[i]
-    exponent -= 127
+    for i in range(1, EXPONENT_SIZE):
+        exponent = exponent * TWO + ieee[i]
+    exponent -= MAX_BIT_SIZE
 
     mantissa = 1.0
-    for i in range(9, 32):
-        mantissa += ieee[i] * (2 ** (8 - i))
+    for i in range(EXPONENT_SIZE, BIT_LENGTH):
+        mantissa += ieee[i] * (TWO ** (EXPONENT_SIZE - 1 - i))
 
-    return mantissa * (2 ** exponent)
+    return mantissa * (TWO ** exponent)
+
 def addition_float(first, second):
     first_ieee = float_to_ieee754(first)
     second_ieee = float_to_ieee754(second)
 
     result = first + second
     return float_to_ieee754(result)
+
 def menu(choise):
     match choise:
         case 1:
@@ -224,7 +258,7 @@ def menu(choise):
             second_bin_num = to_bin(int(second_num), 'additionally')
             result = addition_bin(first_bin_num, second_bin_num)
             print(result)
-            return binary_to_decimal(result)
+            return twos_complement_to_decimal(result)
         case 2:
             first_num = input('Введите первое число: ')
             first_bin_num = to_bin(int(first_num), 'additionally')
@@ -235,7 +269,7 @@ def menu(choise):
 
             result = addition_bin(first_bin_num, second_bin_num)
             print(result)
-            return binary_to_decimal(result)
+            return twos_complement_to_decimal(result)
         case 3:
             first_num = input('Введите первое число: ')
             first_bin_num = to_bin(int(first_num), 'additionally')
@@ -266,8 +300,10 @@ def menu(choise):
             return ieee754_to_float(result_ieee)
         case _:
             return 'Ошибка в выборе'
+
+
 if __name__ == '__main__':
-    choise = input('Введите название опрерации\n'
+    choise = input('Введите название операции\n'
                    '1 - сложение в дополнительном коде\n'
                    '2 - вычитание в дополнительном коде\n'
                    '3 - умножение в прямом коде\n'
