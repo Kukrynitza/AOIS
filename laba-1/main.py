@@ -1,4 +1,12 @@
 import math
+from sorce.addition_bin import addition_bin
+from sorce.to_bin import to_bin
+from sorce.to_bin_for_subtraction import to_bin_for_subtraction
+from sorce.twos_complement_to_decimal import twos_complement_to_decimal
+from sorce.multiplication_bin import multiplication_bin
+from sorce.division_bin import division_bin
+from sorce.addition_float import addition_float
+from sorce.float_to_ieee754 import float_to_ieee754
 
 
 def binary_to_decimal(binary_list):
@@ -13,27 +21,6 @@ def binary_to_decimal(binary_list):
     return decimal
 
 
-def twos_complement_to_decimal(bits):
-    BIT_LENGTH = 8
-    ORIGIN_BIT_LENGTH = 7
-    if len(bits) != BIT_LENGTH:
-        raise ValueError("Массив должен содержать ровно 8 элементов")
-
-    if bits[0] == 1:
-        inverted_bits = [1 - bit for bit in bits]
-        carry = 1
-        for i in range(ORIGIN_BIT_LENGTH, -1, -1):
-            if inverted_bits[i] == 1 and carry == 1:
-                inverted_bits[i] = 0
-            elif inverted_bits[i] == 0 and carry == 1:
-                inverted_bits[i] = 1
-                carry = 0
-        value = -sum(inverted_bits[i] * (2 ** (ORIGIN_BIT_LENGTH - i)) for i in range(BIT_LENGTH))
-    else:
-        value = sum(bits[i] * (2 ** (ORIGIN_BIT_LENGTH - i)) for i in range(BIT_LENGTH))
-
-    return value
-
 def binary_to_decimal_str(binary_str):
     integer_part, fractional_part = binary_str.split('.')
 
@@ -42,188 +29,6 @@ def binary_to_decimal_str(binary_str):
     fractional_value = sum(int(bit) * (2 ** -(i + 1)) for i, bit in enumerate(fractional_part))
 
     return integer_value + fractional_value
-
-def addition_bin(first, second):
-    result = []
-    next = 0
-    MAX_LENGTH = 8
-    for i in range(MAX_LENGTH - 1, -1, -1):
-        count = first[i] + second[i] + next
-        next = 0 if count < 2 else 1
-        result.append(count % 2)
-    result.reverse()
-    return result
-def to_bin(num, choise):
-    direct = []
-    if(num >= 0):
-        direct.append(0)
-    else:
-        direct.append(1)
-    while num != 0:
-        direct.insert(-1, num % 2)
-        num = math.trunc(num / 2)
-    direct.reverse()
-    if len(direct) < 8:
-            direct = direct[:1] + [0] * (8 - len(direct)) + direct[1:]
-    print('В прямом коде:', direct)
-    inverse = []
-    additionally = []
-    if(direct[0] == 0):
-        inverse = direct
-        additionally = direct
-    else:
-        inverse.append(1)
-        for element in direct[1:]:
-            inverse.append(0 if element == 1 else 1)
-        additionally = addition_bin(inverse, [0, 0, 0, 0, 0, 0, 0, 1])
-    print('В обратном', inverse)
-    print('В дополнителльном', additionally)
-    if(choise == 'direct'):
-        return direct
-    if(choise == 'inverse'):
-        return inverse
-    if(choise == 'additionally'):
-        return additionally
-
-def to_bin_for_subtraction(num):
-    BIN_SIZE = 8
-    direct = []
-    if(num >= 0):
-        direct.append(0)
-    else:
-        direct.append(1)
-    while num != 0:
-        direct.insert(-1, num % 2)
-        num = math.trunc(num / 2)
-    direct.reverse()
-    if len(direct) < BIN_SIZE:
-            direct = direct[:1] + [0] * (BIN_SIZE - len(direct)) + direct[1:]
-    inverse = []
-    additionally = []
-    if(direct[0] == 0):
-        inverse = direct
-        additionally = direct
-    else:
-        inverse.append(1)
-        for element in direct[1:]:
-            inverse.append(0 if element == 1 else 1)
-        additionally = addition_bin(inverse, [0, 0, 0, 0, 0, 0, 0, 1])
-    return additionally
-def compare_binary(a, b):
-    while len(a) > 1 and a[0] == 0:
-        a.pop(0)
-    while len(b) > 1 and b[0] == 0:
-        b.pop(0)
-
-    if len(a) != len(b):
-        return len(a) > len(b)
-    return a >= b
-
-def subtract_binary(a, b):
-    a = a[:]
-    b = [0] * (len(a) - len(b)) + b
-    borrow = 0
-
-    for i in range(len(a) - 1, -1, -1):
-        a[i] = a[i] - b[i] - borrow
-        if a[i] < 0:
-            a[i] += 2
-            borrow = 1
-        else:
-            borrow = 0
-
-    while len(a) > 1 and a[0] == 0:
-        a.pop(0)
-
-    return a if a else [0]
-
-def division_bin(dividend, divisor):
-    FIVE_RANGE = 5
-    if all(bit == 0 for bit in divisor):
-        return "Ошибка: Деление на ноль"
-
-    sign = '-' if (dividend[0] != divisor[0]) else ''
-
-    abs_dividend = dividend[1:]
-    abs_divisor = divisor[1:]
-
-    quotient = []
-    remainder = []
-
-    for bit in abs_dividend:
-        remainder.append(bit)
-        if compare_binary(remainder, abs_divisor):
-            quotient.append(1)
-            remainder = subtract_binary(remainder, abs_divisor)
-        else:
-            quotient.append(0)
-
-    while len(quotient) > 1 and quotient[0] == 0:
-        quotient.pop(0)
-
-    quotient.append('.')
-    fractional_part = []
-
-    for _ in range(FIVE_RANGE):
-        remainder.append(0)
-        if compare_binary(remainder, abs_divisor):
-            fractional_part.append(1)
-            remainder = subtract_binary(remainder, abs_divisor)
-        else:
-            fractional_part.append(0)
-
-    result = sign + ''.join(map(str, quotient)) + ''.join(map(str, fractional_part))
-    return result
-def multiplication_bin(first_num, second_num):
-    TRUE_BIT_SIZE = 7
-    sign = 0 if first_num[0] == second_num[0] else 1
-    result = [0,0,0,0,0,0,0,0]
-    for i in range(TRUE_BIT_SIZE, 0, -1):
-        if(second_num[i] == 0):
-            continue
-        first = [0] + first_num[1:]
-        first = first[(TRUE_BIT_SIZE - i):] + [0] * (TRUE_BIT_SIZE - i)
-        result = addition_bin(result, first)
-    return [sign] + result[1:]
-def float_to_ieee754(num):
-    SQUARE_ROOT = 2
-    TRUE_BIT_SIZE = 7
-    MANTIS_BIT_LENGTH = 23
-    MAX_BIT_SIZE = 127
-    result = [0]
-
-    integer_part = int(num)
-    fractional_part = num - integer_part
-
-    binary = []
-    if integer_part == 0:
-        binary = ['0']
-    while integer_part > 0:
-        binary.insert(0, str(integer_part % SQUARE_ROOT))
-        integer_part //= SQUARE_ROOT
-
-    binary.append('.')
-    for _ in range(MANTIS_BIT_LENGTH):
-        fractional_part *= SQUARE_ROOT
-        bit = int(fractional_part)
-        binary.append(str(bit))
-        fractional_part -= bit
-
-    point_pos = binary.index('.')
-    first_one_pos = ''.join(binary).replace('.', '').index('1')
-    exponent = point_pos - first_one_pos - 1 + MAX_BIT_SIZE
-
-    for i in range(TRUE_BIT_SIZE, -1, -1):
-        result.append(1 if exponent & (1 << i) else 0)
-
-    binary_str = ''.join(binary).replace('.', '')
-    mantissa_start = first_one_pos + 1
-    mantissa = binary_str[mantissa_start:mantissa_start + MANTIS_BIT_LENGTH]
-    mantissa = mantissa.ljust(MANTIS_BIT_LENGTH, '0')
-    result.extend([int(x) for x in mantissa])
-
-    return result
-
 
 def ieee754_to_float(ieee):
     MAX_BIT_SIZE = 127
