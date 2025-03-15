@@ -167,19 +167,24 @@ def table_create(exp: str, rpn: list, vars: list):
         index_form.append(str(check_info))
         bool_vars_string = ' '.join(str_numbers) + '  ' + str(check_info)
         result_exp = ''
-        for f in range(len(vars)):
-            if bool_vars[f] == 1:
-                result_exp += vars[f].replace('!', '')
-            else:
-                result_exp += '!' + vars[f].replace('!', '')
-            if check_info == 1 and f + 1 != len(vars):
-                result_exp += '&'
-            elif check_info == 0 and f + 1 != len(vars):
-                result_exp += '|'
         if check_info == 1:
+            for f in range(len(vars)):
+                if bool_vars[f] == 1:
+                    result_exp += vars[f].replace('!', '')
+                else:
+                    result_exp += '!' + vars[f].replace('!', '')
+                if check_info == 1 and f + 1 != len(vars):
+                    result_exp += '&'
             pdnf_list.append(str(i))
             pdnf_exp_list += '(' + result_exp + ')|'
         else:
+            for f in range(len(vars)):
+                if bool_vars[f] == 1:
+                    result_exp += '!' + vars[f].replace('!', '')
+                else:
+                    result_exp += vars[f].replace('!', '')
+                if check_info == 0 and f + 1 != len(vars):
+                    result_exp += '|'
             pcnf_list.append(str(i))
             pcnf_exp_list += '(' + result_exp + ')&'
         print(bool_vars_string)
